@@ -23,6 +23,8 @@ APP_USER: "{{ lookup('env', 'USER') }}"
 APP_PREFIX: "/usr/local"
 APP_ROOT: "{{ false if APP_PREFIX is regex('^/home') else true }}"
 APP_SRC: "{{ APP_PREFIX }}/src/{{ APP_NAME }}"
+APP_DATA: "/data"
+APP_DATA_ROOT: "{{ false if APP_DATA is regex('^/home') else true }}"
 APP_README: "{{ APP_SRC }}/README.md"
 APP_OPT: "{{ APP_PREFIX }}/opt"
 APP_REPO_SSH: git@github.com:computate-org/pecan.git

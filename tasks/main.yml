@@ -15,6 +15,7 @@
     name: "{{ APP_SRC }}"
     state: directory
     owner: "{{ APP_USER }}"
+    group: root
   become: "{{ APP_ROOT }}"
 - name: Check for the {{ APP_NAME }} README file
   stat:
@@ -35,6 +36,14 @@
     version: "{{ APP_TAG }}"
   when: not APP_README_PATH.stat.exists and CLONE_REPO.failed
 
+- name: Create the data directory {{ APP_DATA }}
+  file:
+    name: "{{ APP_DATA }}"
+    state: directory
+    owner: "{{ APP_USER }}"
+    group: root
+  become: "{{ APP_DATA_ROOT }}"
+
 - name: install the amqp PHP extension
   shell: pecl install amqp
   become: true
@@ -47,3 +56,34 @@
     value: amqp.so
     state: present
   become: true
+- name: Link config.php
+  ansible.builtin.file:
+    src: "{{ APP_SRC }}/docker/web/config.docker.php"
+    dest: "{{ APP_SRC }}/web/config.php"
+    owner: "{{ APP_USER }}"
+    state: link
+  tags: link-config
+- name: Link pecan web directory to httpd /var/www/html/pecan
+  ansible.builtin.file:
+    src: "{{ APP_SRC }}/web"
+    dest: /var/www/html/pecan
+    owner: "{{ APP_USER }}"
+    state: link
+  become: true
+  tags: link-web
+
+- name: Create env file for pecan PHP environment variables
+  template:
+    src: env.conf
+    dest: /usr/lib/systemd/system/httpd.service.d/env.conf
+  become: true
+  tags: php-env
+
+- name: Restart httpd
+  service:
+    name: "httpd"
+    enabled: yes
+    state: restarted
+    daemon_reload: true
+  become: true
+  tags: restart-httpd
